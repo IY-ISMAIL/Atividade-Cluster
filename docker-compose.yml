@@ -1,0 +1,66 @@
+version: "3"
+
+services:
+  db:
+    container_name: db
+    build: ./db
+    image: testeDb/db
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "fullcycle"
+    tty: true
+    restart: always
+    volumes:
+      - ./mysql/:/var/lib/mysql
+    networks:
+      - fullcycle
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+
+  frontend:
+    container_name: frontend
+    build: ./frontend
+    image: testeFront/frontend:latest # nomeia a imagem buildada pelo docker-compose.
+    volumes:
+      - ./frontend/:/usr/src/app/
+      - node_modules:/usr/src/app/node_modules
+    command: node index.js
+    depends_on:
+      - db
+    tty: true
+    restart: always
+    networks:
+      - fullcycle
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 2
+      restart_policy:
+        condition: on-failure
+  nginx:
+    container_name: nginx
+    build: ./nginx
+    image: teste/nginx # nomeia a imagem buildada pelo docker-compose.
+    ports:
+      - "8080:80"
+    networks:
+      - fullcycle
+    restart: always
+    deploy:
+      replicas: 3
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+volumes:
+  node_modules:
+
+networks:
+  fullcycle:
+    
